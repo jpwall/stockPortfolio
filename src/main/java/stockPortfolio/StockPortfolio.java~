@@ -1,0 +1,137 @@
+package stockPortfolio;
+
+import Stock.Stock;
+import java.util.*;
+import java.io.*;
+
+public class StockPortfolio {
+    
+    public static void main(String[] args) throws IOException {
+	ArrayList<Stock> portfolio = new ArrayList<Stock>();
+
+	File data = new File("/root/stockPortfolio/src/main/java/stockPortfolio/portfolio.data");
+	Scanner dataScan = new Scanner(data);
+
+	double holdingExpense = 0.0;
+	double soldExpense = 0.0;
+	double holdingProfit = 0.0;
+	double soldProfit = 0.0;
+	int holdingCount = 0;
+
+	// LOOP THROUGH FILE AND ADD TO LIST
+	while (dataScan.hasNextLine() && dataScan.hasNext()) {
+	    int id = Integer.parseInt(dataScan.next());
+	    boolean sold = Boolean.parseBoolean(dataScan.next());
+	    String symbol = dataScan.next();
+	    int shares = Integer.parseInt(dataScan.next());
+	    double buyPrice = Double.parseDouble(dataScan.next());
+	    double curPrice = Double.parseDouble(dataScan.next());
+
+	    portfolio.add(new Stock(symbol, shares, buyPrice, curPrice, sold, id));
+
+	    if (sold) {
+		soldExpense += buyPrice * shares;
+		soldProfit += ((curPrice - buyPrice) * shares) - 14;
+	    } else {
+		holdingCount++;
+		holdingExpense += buyPrice * shares;
+		holdingProfit += ((curPrice - buyPrice) * shares) - 14;
+	    }
+	}
+	
+	if (args[0].equals("help")) {
+	    System.out.println("OPTIONS:");
+	    System.out.println("help\t- Display this help message");
+	    System.out.println("update\t- Update the current prices for all holding stocks");
+	    System.out.println("updatebtc\t- Update btc values for holding");
+	    System.out.println("quote [ticker]\t- Get current quote for ticker symbol");
+	    System.out.println("holding\t- Show all holdings");
+	    System.out.println("sold\t- Show all sold");
+	    System.out.println("stats\t- Show statistics of portfolio");
+	    System.out.println("buy [symbol] [shares]\t- Buy shares of symbol");
+	    System.out.println("sell [id]\t\t- Sell shares of id");
+	    System.out.println("record [symbol] [shares] [buy] [sell]");
+	    System.out.println("part [symbol] [shares] [buy]");
+	} else if (args[0].equals("holding")) {
+	    for (int i = 0; i < portfolio.size(); i++) {
+		if (!portfolio.get(i).getSold()) {
+		    System.out.println(portfolio.get(i));
+		}
+	    }
+	} else if (args[0].equals("sold")) {
+	    for (int i = 0; i < portfolio.size(); i++) {
+		if (portfolio.get(i).getSold()) {
+		    System.out.println(portfolio.get(i));
+		}
+	    }
+	} else if (args[0].equals("stats")) {
+	    holdingExpense    = (double) Math.round(holdingExpense * 100d) / 100d;
+	    holdingProfit     = (double) Math.round(holdingProfit * 100d) / 100d;
+	    double holdingROI = (double) Math.round(((holdingProfit / holdingExpense) * 100) * 10000d) / 10000d;
+	    soldExpense    = (double) Math.round(soldExpense * 100d) / 100d;
+	    soldProfit     = (double) Math.round(soldProfit * 100d) / 100d;
+	    double soldROI = (double) Math.round(((soldProfit / soldExpense) * 100) * 10000d) / 10000d;
+	    double portfolioExpense = holdingExpense + soldExpense;
+	    double portfolioProfit  = holdingProfit + soldProfit;
+	    double portfolioROI     = (double) Math.round(((portfolioProfit / portfolioExpense) * 100)
+							  * 10000d) / 10000d;
+	    System.out.println("CTGRY\tPROFIT\t\tEXPENSE\t\tROI");
+	    System.out.println("folio\t" + portfolioProfit + "\t" + portfolioExpense + "\t"
+			       + portfolioROI + "%");
+	    System.out.println("sold\t" + soldProfit + "\t" + soldExpense + "\t"
+			       + soldROI + "%");
+	    System.out.println("hldng\t" + holdingProfit + "\t" + holdingExpense + "\t"
+			       + holdingROI + "%");
+	} else if (args[0].equals("buy")) {
+	    String symbol = args[1];
+	    int shares = Integer.parseInt(args[2]);
+	    portfolio.add(new Stock(symbol, shares));
+	} else if (args[0].equals("sell")) {
+	    int id = Integer.parseInt(args[1]);
+	    portfolio.get(id).sell();
+	} else if (args[0].equals("record")) {
+	    String symbol = args[1];
+	    int shares = Integer.parseInt(args[2]);
+	    double buyPrice = Double.parseDouble(args[3]);
+	    double sellPrice = Double.parseDouble(args[4]);
+	    portfolio.add(new Stock(symbol, shares, buyPrice, sellPrice, true, 0));
+	} else if (args[0].equals("part")) {
+	    String symbol = args[1];
+	    int shares = Integer.parseInt(args[2]);
+	    double buyPrice = Double.parseDouble(args[3]);
+	    portfolio.add(new Stock(symbol, shares, buyPrice));
+	} else if (args[0].equals("update")) {
+	    for (int i = 0; i < portfolio.size(); i++) {
+		if (!portfolio.get(i).getSold()) {
+		    if (!portfolio.get(i).getSymbol().equals("btc")) {
+			try {
+			    Thread.sleep(12500);
+			} catch (InterruptedException e) {
+			    System.out.println(e);
+			}
+		    }
+		    System.out.println(portfolio.get(i).getSymbol() + " updated");
+		    portfolio.get(i).update();
+		}
+	    }
+	} else if (args[0].equals("updatebtc")) {
+	    for (int i = 0; i < portfolio.size(); i++) {
+		if (!portfolio.get(i).getSold() && portfolio.get(i).getSymbol().equals("btc")) {
+		    portfolio.get(i).update();
+		}
+	    }
+	} else if (args[0].equals("quote")) {
+	    Stock quote = new Stock(args[1], 0);
+	    System.out.println(quote.getQuote(args[1]));
+	} else {
+	    System.out.println("Please use command line arguments. Try help.");
+	}
+
+	// LOOP THROUGH LIST AND ADD TO FILES
+	PrintStream output = new PrintStream(data);
+	for (int i = 0; i < portfolio.size(); i++) {
+	    output.print(i + "\t");
+	    output.println(portfolio.get(i).printShort());
+	}
+    }
+}

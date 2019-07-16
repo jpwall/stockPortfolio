@@ -1,0 +1,169 @@
+package Stock;
+
+import java.net.*;
+import java.io.*;
+import com.google.gson.*;
+
+public class Stock implements Comparable<Stock> {
+    public static final String alphaVantageAPIKey = "0J3ZA01R7354B1BP";
+    public static final String ANSI_RESET  = "\u001B[0m";
+    public static final String ANSI_RED    = "\u001B[31m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_BLUE   = "\u001B[34m";
+    public static final String ANSI_GREEN  = "\u001B[32m";
+    
+    private String symbol;
+    private double buyPrice;
+    private double curPrice;
+    private int shares;
+    private boolean sold;
+    private int id;
+
+    public Stock(String symbol, int shares) throws IOException {
+	double quote = 0.0;
+	try {
+	    quote = getQuote(symbol);
+	} catch (MalformedURLException e) {
+	    System.out.println(e);
+	}
+	this.symbol    = symbol;
+	this.shares    = shares;
+	this.buyPrice  = quote;
+	this.curPrice  = quote;
+	this.sold      = false;
+	this.id        = 0;
+    }
+
+    public Stock(String symbol, int shares, double buyPrice) throws IOException {
+	double quote = 0.0;
+	try {
+	    quote = getQuote(symbol);
+	} catch (MalformedURLException e) {
+	    System.out.println(e);
+	}
+	this.symbol    = symbol;
+	this.shares    = shares;
+	this.buyPrice  = moneyRound(buyPrice);
+	this.curPrice  = quote;
+	this.sold      = false;
+	this.id        = 0;
+    }
+    
+    public Stock(String symbol, int shares, double buyPrice, double sellPrice, boolean sold, int id) {
+	this.symbol    = symbol;
+	this.shares    = shares;
+	this.buyPrice  = moneyRound(buyPrice);
+	this.curPrice  = moneyRound(sellPrice);
+	this.sold      = sold;
+	this.id        = id;
+    }
+
+    public void update() throws IOException {
+	try {
+	    curPrice = this.getQuote(symbol);
+	} catch (MalformedURLException e) {
+	    System.out.println(e);
+	}
+    }
+    
+    public void sell() {
+	sold = true;
+    }
+
+    public boolean getSold() {
+	return sold;
+    }
+
+    public String getSymbol() {
+	return symbol;
+    }
+
+    private double moneyRound(double val) {
+	return (double) Math.round(val * 100d) / 100d;
+    }
+
+    private double percentRound(double val) {
+	return (double) Math.round(val * 10000d) / 10000d;
+    }
+
+    public double getProfit() {
+	return moneyRound(((curPrice - buyPrice) * shares) - 14.0);
+    }
+
+    public double getExpense() {
+	return moneyRound(buyPrice * shares);
+    }
+
+    public double getROI() {
+	return percentRound((this.getProfit() / this.getExpense()) * 100);
+    }
+
+    public String toString() {
+	String STOCK_COLOR = "";
+	String MONEY_COLOR = "";
+	String ROI_COLOR   = "";
+
+	if (!sold) {
+	    STOCK_COLOR = ANSI_RED;
+	    MONEY_COLOR = ANSI_PURPLE;
+	} else {
+	    STOCK_COLOR = ANSI_RESET;
+	    MONEY_COLOR = ANSI_BLUE;
+	}
+	
+	if (this.getROI() > 0.0) {
+	    ROI_COLOR = ANSI_GREEN;
+	} else {
+	    ROI_COLOR = ANSI_RED;
+	}
+	
+	return id + "\t" + STOCK_COLOR + symbol + "\t" + shares + ANSI_RESET + "\t" + buyPrice + "\t" + curPrice + "\t"
+	    + MONEY_COLOR + this.getProfit() + "\t" + this.getExpense() + "\t" + ROI_COLOR + this.getROI() + "%" + ANSI_RESET;
+    }
+
+    public String printCsv() {
+	return symbol + "," + shares + "," + buyPrice + "," + curPrice + "," + this.getProfit() + "," + this.getExpense()
+	    + "," + this.getROI();
+    }
+
+    public String printShort() {
+	return "" + sold + "\t" + symbol + "\t" + shares + "\t" + buyPrice + "\t" + curPrice;
+    }
+
+    public int compareTo(Stock other) {
+	return (int) (10000 * this.getROI()) - (int) (10000 * other.getROI());
+    }
+
+    public double getQuote(String symbol) throws IOException {
+	double quote = 0.0;
+	if (symbol.equals("btc")) {
+	    try {
+		URL btc = new URL("https://api.coindesk.com/v1/bpi/currentprice.json");
+		URLConnection request = btc.openConnection();
+		request.connect();
+
+		JsonParser jsonParser = new JsonParser();
+		JsonElement data = jsonParser.parse(new InputStreamReader((InputStream) request.getContent()));
+		JsonObject obj = data.getAsJsonObject();
+		quote = obj.getAsJsonObject("bpi").getAsJsonObject("USD").get("rate_float").getAsDouble();
+	    } catch (MalformedURLException e) {
+		System.out.println(e);
+	    }
+	} else {
+	    //String avApiKey = "0J3ZA01R7354B1BP";
+	    try {
+		URL alpha = new URL("https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=" + symbol.toUpperCase().trim() + "&apikey=" + alphaVantageAPIKey.trim());
+		URLConnection request = alpha.openConnection();
+		request.connect();
+
+		JsonParser jsonParser = new JsonParser();
+		JsonElement data = jsonParser.parse(new InputStreamReader((InputStream) request.getContent()));
+		JsonObject obj = data.getAsJsonObject();
+		quote = obj.getAsJsonObject("Global Quote").get("05. price").getAsDouble();
+	    } catch (MalformedURLException e) {
+		System.out.println(e);
+	    }
+	}
+	return moneyRound(quote);
+    }
+}
