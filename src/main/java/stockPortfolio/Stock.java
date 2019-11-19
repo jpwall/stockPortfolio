@@ -2,10 +2,13 @@ package Stock;
 
 import java.net.*;
 import java.io.*;
+import java.util.*;
 import com.google.gson.*;
+import org.jsoup.*;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 public class Stock implements Comparable<Stock> {
-    public static final String alphaVantageAPIKey = "0J3ZA01R7354B1BP";
     public static final String ANSI_RESET  = "\u001B[0m";
     public static final String ANSI_RED    = "\u001B[31m";
     public static final String ANSI_PURPLE = "\u001B[35m";
@@ -58,12 +61,19 @@ public class Stock implements Comparable<Stock> {
 	this.id        = id;
     }
 
-    public void update() throws IOException {
+    public double update() throws IOException {
+	double ret = 0.0;
 	try {
 	    curPrice = this.getQuote(symbol);
+	    ret = curPrice;
 	} catch (MalformedURLException e) {
 	    System.out.println(e);
 	}
+	return ret;
+    }
+
+    public void update(double val) {
+	curPrice = val;
     }
     
     public void sell() {
@@ -116,14 +126,15 @@ public class Stock implements Comparable<Stock> {
 	} else {
 	    ROI_COLOR = ANSI_RED;
 	}
-	
-	return id + "\t" + STOCK_COLOR + symbol + "\t" + shares + ANSI_RESET + "\t" + buyPrice + "\t" + curPrice + "\t"
-	    + MONEY_COLOR + this.getProfit() + "\t" + this.getExpense() + "\t" + ROI_COLOR + this.getROI() + "%" + ANSI_RESET;
+        
+	return id + "    " + STOCK_COLOR + symbol + "    " + shares + ANSI_RESET + "    "
+	    + buyPrice + "    " + curPrice + "    " + MONEY_COLOR + this.getProfit() + "    "
+	    + this.getExpense() + "    " + ROI_COLOR + this.getROI() + "%" + ANSI_RESET;
     }
 
     public String printCsv() {
-	return symbol + "," + shares + "," + buyPrice + "," + curPrice + "," + this.getProfit() + "," + this.getExpense()
-	    + "," + this.getROI();
+	return symbol + "," + shares + "," + buyPrice + "," + curPrice + "," + this.getProfit()
+	    + "," + this.getExpense() + "," + this.getROI();
     }
 
     public String printShort() {
@@ -141,7 +152,6 @@ public class Stock implements Comparable<Stock> {
 		URL btc = new URL("https://api.coindesk.com/v1/bpi/currentprice.json");
 		URLConnection request = btc.openConnection();
 		request.connect();
-
 		JsonParser jsonParser = new JsonParser();
 		JsonElement data = jsonParser.parse(new InputStreamReader((InputStream) request.getContent()));
 		JsonObject obj = data.getAsJsonObject();
@@ -150,20 +160,30 @@ public class Stock implements Comparable<Stock> {
 		System.out.println(e);
 	    }
 	} else {
-	    //String avApiKey = "0J3ZA01R7354B1BP";
-	    try {
-		URL alpha = new URL("https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=" + symbol.toUpperCase().trim() + "&apikey=" + alphaVantageAPIKey.trim());
-		URLConnection request = alpha.openConnection();
-		request.connect();
-
-		JsonParser jsonParser = new JsonParser();
-		JsonElement data = jsonParser.parse(new InputStreamReader((InputStream) request.getContent()));
-		JsonObject obj = data.getAsJsonObject();
-		quote = obj.getAsJsonObject("Global Quote").get("05. price").getAsDouble();
-	    } catch (MalformedURLException e) {
-		System.out.println(e);
-	    }
+	    Document doc = Jsoup.connect("https://www.marketwatch.com/investing/stock/"
+					 + symbol.toLowerCase()).timeout(0).get();
+	    quote = Double.parseDouble(doc.select("bg-quote.value").text());
 	}
 	return moneyRound(quote);
+    }
+
+    public void getZacks(String symbol) throws IOException {
+	int zacks = 0;
+	ArrayList<String> values = new ArrayList<String>();
+	Document doc = Jsoup.connect("https://www.zacks.com/stock/quote/" + symbol.toUpperCase() + "?q=" + symbol).get();
+	String one = doc.select("span.rankrect_1").text();
+	String two = doc.select("span.rankrect_2").text();
+	String three = doc.select("span.rankrect_3").text();
+	String four = doc.select("span.rankrect_4").text();
+	String five = doc.select("span.rankrect_5").text();
+	values.add(one);
+	values.add(two);
+	values.add(three);
+	values.add(four);
+	values.add(five);
+
+	for (int i = 0; i < values.size(); i++) {
+	    System.out.println(values.get(i));
+	}
     }
 }

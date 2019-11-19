@@ -6,8 +6,7 @@ import java.io.*;
 
 public class StockPortfolio {
     public static ArrayList<Stock> portfolio = new ArrayList<Stock>();
-    public static File data = new File("/root/stockPortfolio/src/main/java/stockPortfolio/portfolio.data");
-    public static final int refreshDelay = 12500;
+    public static File data = new File("/home/jpwall/stockPortfolio/src/main/java/stockPortfolio/portfolio.data");
     public static double holdingExpense = 0.0;
     public static double soldExpense    = 0.0;
     public static double holdingProfit  = 0.0;
@@ -57,9 +56,14 @@ public class StockPortfolio {
 	    writePortfolio();
 	} else if (args[0].equals("updatebtc")) {
 	    readPortfolio();
+	    Map <String, Double> tmp = new HashMap<String, Double>();
 	    for (int i = 0; i < portfolio.size(); i++) {
 		if (!portfolio.get(i).getSold() && portfolio.get(i).getSymbol().equals("btc")) {
-		    portfolio.get(i).update();
+		    if (tmp.containsKey("btc")) {
+			portfolio.get(i).update(tmp.get("btc"));
+		    } else {
+			tmp.put("btc", portfolio.get(i).update());
+		    }
 		}
 	    }
 	    writePortfolio();
@@ -69,6 +73,9 @@ public class StockPortfolio {
 	} else if (args[0].equals("export")) {
 	    readPortfolio();
 	    exportPortfolio();
+	} else if (args[0].equals("zacks")) {
+	    Stock zacks = new Stock(args[1], 0);
+	    zacks.getZacks(args[1]);
 	} else {
 	    System.out.println("Please use command line arguments. Try help.");
 	}
@@ -138,17 +145,18 @@ public class StockPortfolio {
     }
 
     public static void updatePortfolio() throws IOException {
+	Map<String, Double> tmp = new HashMap<String, Double>();
 	for (int i = 0; i < portfolio.size(); i++) {
 	    if (!portfolio.get(i).getSold()) {
-		if (!portfolio.get(i).getSymbol().equals("btc")) {
-		    try {
-			Thread.sleep(refreshDelay);
-		    } catch (InterruptedException e) {
-			System.out.println(e);
-		    }
+		String ticker = portfolio.get(i).getSymbol();
+		double val = 0.0;
+		if (!tmp.containsKey(ticker)) {
+		    val = portfolio.get(i).update();
+		    tmp.put(ticker, val);
+		} else {
+		    portfolio.get(i).update(tmp.get(ticker));
 		}
 		System.out.println(portfolio.get(i).getSymbol() + " updated");
-		portfolio.get(i).update();
 	    }
 	}
     }
@@ -165,12 +173,12 @@ public class StockPortfolio {
 	double portfolioProfit  = holdingProfit + soldProfit;
 	double portfolioROI     = (double) Math.round(((portfolioProfit / portfolioExpense) * 100)
 						      * 10000d) / 10000d;
-	System.out.println("CTGRY\tPROFIT\t\tEXPENSE\t\tROI");
-	System.out.println("folio\t" + portfolioProfit + "\t" + portfolioExpense + "\t"
+	System.out.println("CTGRY    PROFIT        EXPENSE        ROI");
+	System.out.println("folio    " + portfolioProfit + "    " + portfolioExpense + "    "
 			   + portfolioROI + "%");
-	System.out.println("sold\t" + soldProfit + "\t" + soldExpense + "\t"
+	System.out.println("sold     " + soldProfit + "    " + soldExpense + "    "
 			   + soldROI + "%");
-	System.out.println("hldng\t" + holdingProfit + "\t" + holdingExpense + "\t"
+	System.out.println("hldng    " + holdingProfit + "    " + holdingExpense + "    "
 			   + holdingROI + "%");
     }
 

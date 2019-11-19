@@ -7,31 +7,29 @@
  */
 
 plugins {
-    // Apply the java plugin to add support for Java
     id 'java'
-
-    // Apply the application plugin to add support for building an application
+    
     id 'application'
+    id "com.github.johnrengelman.shadow" version "5.0.0"
+}
+
+jar {
+    manifest {
+    	     attributes (
+	     		'Main-Class': 'stockPortfolio.StockPortfolio'
+	     )
+    }
 }
 
 repositories {
-    // Use jcenter for resolving your dependencies.
-    // You can declare any Maven/Ivy/file repository here.
     jcenter()
 }
 
 dependencies {
-    // This dependency is found on compile classpath of this component and consumers.
     implementation 'com.google.guava:guava:26.0-jre'
-
     implementation 'com.google.code.gson:gson:2.8.5'
-
-    // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
-
-    //compile 'org.json:json:20180813'
-    //compile files('lib/json-20180813.jar')
+    compile 'org.jsoup:jsoup:1.12.1'
 }
 
-// Define the main class for the application
 mainClassName = 'stockPortfolio.StockPortfolio'
