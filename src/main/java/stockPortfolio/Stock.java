@@ -22,37 +22,20 @@ public class Stock implements Comparable<Stock> {
     private boolean sold;
     private int id;
 
+    public Stock(String symbol) {
+	this(symbol, 0, 0.0, getQuote(symbol), false, 0);
+    }
+    
     public Stock(String symbol, int shares) throws IOException {
-	double quote = 0.0;
-	try {
-	    quote = getQuote(symbol);
-	} catch (MalformedURLException e) {
-	    System.out.println(e);
-	}
-	this.symbol    = symbol;
-	this.shares    = shares;
-	this.buyPrice  = quote;
-	this.curPrice  = quote;
-	this.sold      = false;
-	this.id        = 0;
+	this(symbol, shares, getQuote(symbol), getQuote(symbol), false, 0);
     }
 
     public Stock(String symbol, int shares, double buyPrice) throws IOException {
-	double quote = 0.0;
-	try {
-	    quote = getQuote(symbol);
-	} catch (MalformedURLException e) {
-	    System.out.println(e);
-	}
-	this.symbol    = symbol;
-	this.shares    = shares;
-	this.buyPrice  = moneyRound(buyPrice);
-	this.curPrice  = quote;
-	this.sold      = false;
-	this.id        = 0;
+	this(symbol, shares, moneyRound(buyPrice), getQuote(symbol), false, 0);
     }
     
-    public Stock(String symbol, int shares, double buyPrice, double sellPrice, boolean sold, int id) {
+    public Stock(String symbol, int shares, double buyPrice, double sellPrice, boolean sold,
+		 int id) {
 	this.symbol    = symbol;
 	this.shares    = shares;
 	this.buyPrice  = moneyRound(buyPrice);
@@ -61,15 +44,9 @@ public class Stock implements Comparable<Stock> {
 	this.id        = id;
     }
 
-    public double update() throws IOException {
-	double ret = 0.0;
-	try {
-	    curPrice = this.getQuote(symbol);
-	    ret = curPrice;
-	} catch (MalformedURLException e) {
-	    System.out.println(e);
-	}
-	return ret;
+    public double update() {
+	curPrice = getQuote(symbol);
+	return curPrice;
     }
 
     public void update(double val) {
@@ -80,6 +57,10 @@ public class Stock implements Comparable<Stock> {
 	sold = true;
     }
 
+    public double getCurPrice() {
+	return curPrice;
+    }
+
     public boolean getSold() {
 	return sold;
     }
@@ -88,7 +69,7 @@ public class Stock implements Comparable<Stock> {
 	return symbol;
     }
 
-    private double moneyRound(double val) {
+    private static double moneyRound(double val) {
 	return (double) Math.round(val * 100d) / 100d;
     }
 
@@ -142,10 +123,10 @@ public class Stock implements Comparable<Stock> {
     }
 
     public int compareTo(Stock other) {
-	return (int) (10000 * this.getROI()) - (int) (10000 * other.getROI());
+	return (int) (10000 * other.getROI()) -  (int) (10000 * this.getROI());
     }
 
-    public double getQuote(String symbol) throws IOException {
+    public static double getQuote(String symbol) {
 	double quote = 0.0;
 	if (symbol.equals("btc")) {
 	    try {
@@ -153,16 +134,27 @@ public class Stock implements Comparable<Stock> {
 		URLConnection request = btc.openConnection();
 		request.connect();
 		JsonParser jsonParser = new JsonParser();
-		JsonElement data = jsonParser.parse(new InputStreamReader((InputStream) request.getContent()));
+		JsonElement data = jsonParser
+		    .parse(new InputStreamReader((InputStream) request.getContent()));
 		JsonObject obj = data.getAsJsonObject();
-		quote = obj.getAsJsonObject("bpi").getAsJsonObject("USD").get("rate_float").getAsDouble();
+		quote = obj
+		    .getAsJsonObject("bpi")
+		    .getAsJsonObject("USD")
+		    .get("rate_float")
+		    .getAsDouble();
 	    } catch (MalformedURLException e) {
+		System.out.println(e);
+	    } catch (IOException e) {
 		System.out.println(e);
 	    }
 	} else {
-	    Document doc = Jsoup.connect("https://www.marketwatch.com/investing/stock/"
-					 + symbol.toLowerCase()).timeout(0).get();
-	    quote = Double.parseDouble(doc.select("bg-quote.value").text());
+	    try {
+		Document doc = Jsoup.connect("https://www.marketwatch.com/investing/stock/"
+					     + symbol.toLowerCase()).timeout(0).get();
+		quote = Double.parseDouble(doc.select("bg-quote.value").text());
+	    } catch (IOException e) {
+		System.out.println(e);
+	    }
 	}
 	return moneyRound(quote);
     }
@@ -170,20 +162,18 @@ public class Stock implements Comparable<Stock> {
     public void getZacks(String symbol) throws IOException {
 	int zacks = 0;
 	ArrayList<String> values = new ArrayList<String>();
-	Document doc = Jsoup.connect("https://www.zacks.com/stock/quote/" + symbol.toUpperCase() + "?q=" + symbol).get();
-	String one = doc.select("span.rankrect_1").text();
-	String two = doc.select("span.rankrect_2").text();
-	String three = doc.select("span.rankrect_3").text();
-	String four = doc.select("span.rankrect_4").text();
-	String five = doc.select("span.rankrect_5").text();
-	values.add(one);
-	values.add(two);
-	values.add(three);
-	values.add(four);
-	values.add(five);
+	Document doc = Jsoup.connect("https://www.zacks.com/stock/quote/" + symbol.toUpperCase()
+				     + "?q=" + symbol).get();
+	values.add(doc.select("span.rankrect_1").text());
+	values.add(doc.select("span.rankrect_2").text());
+	values.add(doc.select("span.rankrect_3").text());
+	values.add(doc.select("span.rankrect_4").text());
+	values.add(doc.select("span.rankrect_5").text());
 
 	for (int i = 0; i < values.size(); i++) {
-	    System.out.println(values.get(i));
+	    if (values.get(i).length() > 0) {
+		System.out.println(values.get(i).substring(0, 1));
+	    }
 	}
     }
 }
