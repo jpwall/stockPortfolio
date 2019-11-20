@@ -6,7 +6,7 @@ import java.io.*;
 
 public class StockPortfolio {
     public static ArrayList<Stock> portfolio = new ArrayList<Stock>();
-    public static File data = new File("/home/jpwall/stockPortfolio/src/main/java/stockPortfolio/portfolio.data");
+    public static final File data = new File("/home/jpwall/stockPortfolio/src/main/java/stockPortfolio/portfolio.data");
     public static double holdingExpense = 0.0;
     public static double soldExpense    = 0.0;
     public static double holdingProfit  = 0.0;
@@ -68,16 +68,19 @@ public class StockPortfolio {
 	    }
 	    writePortfolio();
 	} else if (args[0].equals("quote")) {
-	    Stock quote = new Stock(args[1], 0);
-	    System.out.println(quote.getQuote(args[1]));
+	    Stock quote = new Stock(args[1]);
+	    System.out.println(quote.getCurPrice());
 	} else if (args[0].equals("export")) {
 	    readPortfolio();
 	    exportPortfolio();
 	} else if (args[0].equals("zacks")) {
-	    Stock zacks = new Stock(args[1], 0);
+	    Stock zacks = new Stock(args[1]);
 	    zacks.getZacks(args[1]);
+	} else if (args[0].equals("ordered")) {
+	    readPortfolio();
+	    orderedPortfolio(args[1]);
 	} else {
-	    System.out.println("Please use command line arguments. Try help.");
+	    printHelp();
 	}
     }
 
@@ -92,9 +95,10 @@ public class StockPortfolio {
 	System.out.println("stats\t- Show statistics of portfolio");
 	System.out.println("buy [symbol] [shares]\t- Buy shares of symbol");
 	System.out.println("sell [id]\t\t- Sell shares of id");
-	System.out.println("record [symbol] [shares] [buy] [sell]");
-	System.out.println("part [symbol] [shares] [buy]");
+	System.out.println("record [symbol] [shares] [buy] [sell]\t- record sold stock");
+	System.out.println("part [symbol] [shares] [buy]\t- record holding stock");
 	System.out.println("export\t- Export portfolio and holding as csv files");
+	System.out.println("ordered [type]\t- Where type is all, holding, or sold, displays stocks in order based on ROI, greatest to least");
     }
 
     public static void readPortfolio() throws FileNotFoundException {
@@ -141,6 +145,21 @@ public class StockPortfolio {
 	    if (portfolio.get(i).getSold()) {
 		System.out.println(portfolio.get(i));
 	    }
+	}
+    }
+
+    public static void orderedPortfolio(String arg) {
+	Collections.sort(portfolio);
+	if (arg.equalsIgnoreCase("all")) {
+	    for (int i = 0; i < portfolio.size(); i++) {
+		System.out.println(portfolio.get(i));
+	    }
+	} else if (arg.equalsIgnoreCase("holding")) {
+	    printHolding();
+	} else if (arg.equalsIgnoreCase("sold")) {
+	    printSold();
+	} else {
+	    System.out.println("Unknown second argument, please use all, holding, or sold");
 	}
     }
 
