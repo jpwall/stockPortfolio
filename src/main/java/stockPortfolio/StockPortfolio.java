@@ -30,6 +30,12 @@ public class StockPortfolio {
 	    int shares = Integer.parseInt(args[2]);
 	    portfolio.add(new Stock(symbol, shares));
 	    writePortfolio();
+	} else if (args[0].equals("short")) {
+	    readPortfolio();
+	    String symbol = args[1];
+	    int shares = Integer.parseInt(args[2]);
+	    portfolio.add(new Stock(symbol, shares, true));
+	    writePortfolio();
 	} else if (args[0].equals("sell")) {
 	    readPortfolio();
 	    int id = Integer.parseInt(args[1]);
@@ -41,7 +47,7 @@ public class StockPortfolio {
 	    int shares = Integer.parseInt(args[2]);
 	    double buyPrice = Double.parseDouble(args[3]);
 	    double sellPrice = Double.parseDouble(args[4]);
-	    portfolio.add(new Stock(symbol, shares, buyPrice, sellPrice, true, 0));
+	    portfolio.add(new Stock(symbol, shares, buyPrice, sellPrice, true, false, 0));
 	    writePortfolio();
 	} else if (args[0].equals("part")) {
 	    readPortfolio();
@@ -50,7 +56,7 @@ public class StockPortfolio {
 	    double buyPrice = Double.parseDouble(args[3]);
 	    portfolio.add(new Stock(symbol, shares, buyPrice));
 	    writePortfolio();
-	} else if (args[0].equals("update")) {
+	} else if (args[0].equals("update") || args[0].equals("u")) {
 	    readPortfolio();
 	    updatePortfolio();
 	    writePortfolio();
@@ -76,9 +82,13 @@ public class StockPortfolio {
 	} else if (args[0].equals("zacks")) {
 	    Stock zacks = new Stock(args[1]);
 	    zacks.getZacks(args[1]);
-	} else if (args[0].equals("ordered")) {
+	} else if (args[0].equals("ordered") || args[0].equals("oh")) {
 	    readPortfolio();
-	    orderedPortfolio(args[1]);
+	    if (!args[0].equals("oh")) {
+		orderedPortfolio(args[1]);
+	    } else {
+		orderedPortfolio("holding");
+	    }
 	} else {
 	    printHelp();
 	}
@@ -87,7 +97,7 @@ public class StockPortfolio {
     public static void printHelp() {
 	System.out.println("OPTIONS:");
 	System.out.println("help\t- Display this help message");
-	System.out.println("update\t- Update the current prices for all holding stocks");
+	System.out.println("update (or 'u')\t- Update the current prices for all holding stocks");
 	System.out.println("updatebtc\t- Update btc values for holding");
 	System.out.println("quote [ticker]\t- Get current quote for ticker symbol");
 	System.out.println("holding\t- Show all holdings");
@@ -98,7 +108,7 @@ public class StockPortfolio {
 	System.out.println("record [symbol] [shares] [buy] [sell]\t- record sold stock");
 	System.out.println("part [symbol] [shares] [buy]\t- record holding stock");
 	System.out.println("export\t- Export portfolio and holding as csv files");
-	System.out.println("ordered [type]\t- Where type is all, holding, or sold, displays stocks in order based on ROI, greatest to least");
+	System.out.println("ordered [type]\t- Where type is all, holding, or sold, displays stocks in order based on ROI, greatest to least. Type 'oh' for ordered holding");
     }
 
     public static void readPortfolio() throws FileNotFoundException {
@@ -107,19 +117,34 @@ public class StockPortfolio {
 	while (dataScan.hasNextLine() && dataScan.hasNext()) {
 	    int id = Integer.parseInt(dataScan.next());
 	    boolean sold = Boolean.parseBoolean(dataScan.next());
+	    boolean shortType = Boolean.parseBoolean(dataScan.next());
 	    String symbol = dataScan.next();
 	    int shares = Integer.parseInt(dataScan.next());
 	    double buyPrice = Double.parseDouble(dataScan.next());
 	    double curPrice = Double.parseDouble(dataScan.next());
 
-	    portfolio.add(new Stock(symbol, shares, buyPrice, curPrice, sold, id));
+	    //if (!shortType) {
+		portfolio.add(new Stock(symbol, shares, buyPrice, curPrice, sold,
+					shortType, id));
+		//} else {
+		//Short add = new Short(symbol, shares, buyPrice, curPrice, sold, id);
+		//portfolio.add((Stock) add);
+		//}
 
 	    if (sold) {
 		soldExpense += buyPrice * shares;
-		soldProfit += ((curPrice - buyPrice) * shares) - 14;
+		if (!shortType) {
+		    soldProfit += ((curPrice - buyPrice) * shares) - 14;
+		} else {
+		    soldProfit += ((buyPrice - curPrice) * shares) - 14;
+		}
 	    } else {
 		holdingExpense += buyPrice * shares;
-		holdingProfit += ((curPrice - buyPrice) * shares) - 14;
+		if (!shortType) {
+		    holdingProfit += ((curPrice - buyPrice) * shares) - 14;
+		} else {
+		    holdingProfit += ((buyPrice - curPrice) * shares) - 14;
+		}
 	    }
 	}
     }

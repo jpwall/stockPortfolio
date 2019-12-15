@@ -15,33 +15,39 @@ public class Stock implements Comparable<Stock> {
     public static final String ANSI_BLUE   = "\u001B[34m";
     public static final String ANSI_GREEN  = "\u001B[32m";
     
-    private String symbol;
-    private double buyPrice;
-    private double curPrice;
-    private int shares;
-    private boolean sold;
-    private int id;
+    protected String symbol;
+    protected double buyPrice;
+    protected double curPrice;
+    protected int shares;
+    protected boolean sold;
+    protected boolean shortType;
+    protected int id;
 
     public Stock(String symbol) {
-	this(symbol, 0, 0.0, getQuote(symbol), false, 0);
+	this(symbol, 0, 0.0, getQuote(symbol), false, false, 0);
     }
     
     public Stock(String symbol, int shares) throws IOException {
-	this(symbol, shares, getQuote(symbol), getQuote(symbol), false, 0);
+	this(symbol, shares, getQuote(symbol), getQuote(symbol), false, false, 0);
     }
 
     public Stock(String symbol, int shares, double buyPrice) throws IOException {
-	this(symbol, shares, moneyRound(buyPrice), getQuote(symbol), false, 0);
+	this(symbol, shares, moneyRound(buyPrice), getQuote(symbol), false, false, 0);
+    }
+
+    public Stock(String symbol, int shares, boolean shortType) {
+	this(symbol, shares, getQuote(symbol), getQuote(symbol), false, shortType, 0);
     }
     
     public Stock(String symbol, int shares, double buyPrice, double sellPrice, boolean sold,
-		 int id) {
+		 boolean shortType, int id) {
 	this.symbol    = symbol;
 	this.shares    = shares;
 	this.buyPrice  = moneyRound(buyPrice);
 	this.curPrice  = moneyRound(sellPrice);
 	this.sold      = sold;
 	this.id        = id;
+	this.shortType = shortType;
     }
 
     public double update() {
@@ -69,7 +75,7 @@ public class Stock implements Comparable<Stock> {
 	return symbol;
     }
 
-    private static double moneyRound(double val) {
+    protected static double moneyRound(double val) {
 	return (double) Math.round(val * 100d) / 100d;
     }
 
@@ -78,7 +84,11 @@ public class Stock implements Comparable<Stock> {
     }
 
     public double getProfit() {
-	return moneyRound(((curPrice - buyPrice) * shares) - 14.0);
+	if (!shortType) {
+	    return moneyRound(((curPrice - buyPrice) * shares) - 14.0);
+	} else {
+	    return moneyRound(((buyPrice - curPrice) * shares) - 14.0);
+	}
     }
 
     public double getExpense() {
@@ -107,10 +117,15 @@ public class Stock implements Comparable<Stock> {
 	} else {
 	    ROI_COLOR = ANSI_RED;
 	}
-        
-	return id + "    " + STOCK_COLOR + symbol + "    " + shares + ANSI_RESET + "    "
+
+	String ret = "";
+	ret += id + "    " + STOCK_COLOR + symbol + "    " + shares + ANSI_RESET + "    "
 	    + buyPrice + "    " + curPrice + "    " + MONEY_COLOR + this.getProfit() + "    "
 	    + this.getExpense() + "    " + ROI_COLOR + this.getROI() + "%" + ANSI_RESET;
+	if (shortType) {
+	    ret += " [short]";
+	}
+	return ret;
     }
 
     public String printCsv() {
@@ -119,7 +134,7 @@ public class Stock implements Comparable<Stock> {
     }
 
     public String printShort() {
-	return "" + sold + "\t" + symbol + "\t" + shares + "\t" + buyPrice + "\t" + curPrice;
+	return "" + sold + "\t" + shortType + "\t" + symbol + "\t" + shares + "\t" + buyPrice + "\t" + curPrice;
     }
 
     public int compareTo(Stock other) {
