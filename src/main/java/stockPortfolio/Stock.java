@@ -166,7 +166,7 @@ public class Stock implements Comparable<Stock> {
 	    try {
 		Document doc = Jsoup.connect("https://www.marketwatch.com/investing/stock/" + symbol.toLowerCase()).timeout(0).get();
 		String[] pre = doc.select(".value").text().split(" ");
-		quote = Double.parseDouble(pre[0]);
+		quote = Double.parseDouble(pre[0].replaceAll(",", ""));
 	    } catch (IOException e) {
 		System.out.println(e);
 	    }
