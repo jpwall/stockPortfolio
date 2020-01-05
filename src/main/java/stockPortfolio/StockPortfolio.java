@@ -123,13 +123,8 @@ public class StockPortfolio {
 	    double buyPrice = Double.parseDouble(dataScan.next());
 	    double curPrice = Double.parseDouble(dataScan.next());
 
-	    //if (!shortType) {
-		portfolio.add(new Stock(symbol, shares, buyPrice, curPrice, sold,
+	    portfolio.add(new Stock(symbol, shares, buyPrice, curPrice, sold,
 					shortType, id));
-		//} else {
-		//Short add = new Short(symbol, shares, buyPrice, curPrice, sold, id);
-		//portfolio.add((Stock) add);
-		//}
 
 	    if (sold) {
 		soldExpense += buyPrice * shares;
@@ -208,10 +203,10 @@ public class StockPortfolio {
 		    portfolio.get(i).update(tmp.get(ticker));
 		}
 		cSize++;
-		//System.out.println(portfolio.get(i).getSymbol() + " updated");
 		System.out.print(cSize + " / " + hSize + "\r");
 	    }
 	}
+	System.out.println("");
     }
 
     public static void printStats() {
