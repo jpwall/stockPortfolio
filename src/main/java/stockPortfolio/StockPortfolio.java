@@ -190,6 +190,13 @@ public class StockPortfolio {
 
     public static void updatePortfolio() throws IOException {
 	Map<String, Double> tmp = new HashMap<String, Double>();
+	int cSize = 0;
+	int hSize = 0;
+	for (int i = 0; i < portfolio.size(); i++) {
+	    if (!portfolio.get(i).getSold()) {
+		hSize++;
+	    }
+	}
 	for (int i = 0; i < portfolio.size(); i++) {
 	    if (!portfolio.get(i).getSold()) {
 		String ticker = portfolio.get(i).getSymbol();
@@ -200,7 +207,9 @@ public class StockPortfolio {
 		} else {
 		    portfolio.get(i).update(tmp.get(ticker));
 		}
-		System.out.println(portfolio.get(i).getSymbol() + " updated");
+		cSize++;
+		//System.out.println(portfolio.get(i).getSymbol() + " updated");
+		System.out.print(cSize + " / " + hSize + "\r");
 	    }
 	}
     }
