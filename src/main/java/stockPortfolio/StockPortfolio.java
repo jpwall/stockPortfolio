@@ -203,10 +203,24 @@ public class StockPortfolio {
 		    portfolio.get(i).update(tmp.get(ticker));
 		}
 		cSize++;
-		System.out.print(cSize + " / " + hSize + "\r");
+		System.out.print(cSize + " / " + hSize + "  ");
+		printLoading(cSize, hSize, 50);
 	    }
 	}
 	System.out.println("");
+    }
+
+    private static void printLoading(int cSize, int hSize, int barSize) {
+	double numbars = ((double) cSize / (double) hSize) * barSize;
+	System.out.print("|");
+	for (int i = 0; i < barSize; i++) {
+	    if (i < numbars) {
+		System.out.print("#");
+	    } else {
+		System.out.print(" ");
+	    }
+	}
+	System.out.print("|\r");
     }
 
     public static void printStats() {
