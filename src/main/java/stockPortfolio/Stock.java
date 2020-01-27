@@ -164,9 +164,13 @@ public class Stock implements Comparable<Stock> {
 	    }
 	} else {
 	    try {
-		Document doc = Jsoup.connect("https://www.marketwatch.com/investing/stock/" + symbol.toLowerCase()).timeout(0).get();
-		String[] pre = doc.select(".value").text().split(" ");
-		quote = Double.parseDouble(pre[0].replaceAll(",", ""));
+		Document doc = Jsoup
+		    .connect("https://old.nasdaq.com/symbol/" + symbol.toLowerCase())
+		    .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.131 Safari/537.36")
+		    .timeout(0)
+		    .get();
+		quote = Double.parseDouble(doc.select("#qwidget_lastsale").text().substring(1)
+					   .replaceAll(",", ""));
 	    } catch (IOException e) {
 		System.out.println(e);
 	    }
