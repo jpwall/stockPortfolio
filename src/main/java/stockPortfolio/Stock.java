@@ -11,6 +11,7 @@ import org.jsoup.nodes.Element;
 public class Stock implements Comparable<Stock> {
     public static final String ANSI_RESET  = "\u001B[0m";
     public static final String ANSI_RED    = "\u001B[31m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
     public static final String ANSI_PURPLE = "\u001B[35m";
     public static final String ANSI_BLUE   = "\u001B[34m";
     public static final String ANSI_GREEN  = "\u001B[32m";
@@ -112,8 +113,10 @@ public class Stock implements Comparable<Stock> {
 	    MONEY_COLOR = ANSI_BLUE;
 	}
 	
-	if (this.getROI() > 0.0) {
+	if (this.getROI() > 10.0) {
 	    ROI_COLOR = ANSI_GREEN;
+	} else if (this.getROI() >= 0.0) {
+	    ROI_COLOR = ANSI_YELLOW;
 	} else {
 	    ROI_COLOR = ANSI_RED;
 	}
